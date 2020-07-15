@@ -15,4 +15,10 @@ public class LotteryDTO {
     private TicketStatus status;
 
     private Set<TicketLineDTO> lines;
+
+    @Override
+    public boolean equals(Object obj) {
+        LotteryDTO dto = (LotteryDTO) obj;
+        return this.getId().equals(dto.getId());
+    }
 }

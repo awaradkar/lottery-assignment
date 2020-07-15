@@ -28,7 +28,6 @@ public class LotteryServiceImpl implements LotteryService {
     public Set<LotteryDTO> getAllTickets() {
         List<Lottery> dbLotteries = lotteryRepository.findAll();
         Set<LotteryDTO> lotteries = new HashSet<>();
-
         for(Lottery lottery:dbLotteries){
             LotteryDTO lotteryDTO = lotteryHelper.getLotteryDTOFromModel(lottery);
             lotteries.add(lotteryDTO);

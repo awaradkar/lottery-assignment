@@ -56,7 +56,7 @@ public class LotteryController {
     }
 
     @RequestMapping(value = "/ticket/{id}", method = RequestMethod.PUT, produces = {"application/json"})
-    public ResponseEntity<Object> getTicket(@PathVariable("id") Long id, @RequestBody Set<TicketLineDTO> ticketLineDTOS) throws Exception {
+    public ResponseEntity<Object> amendTicket(@PathVariable("id") Long id, @RequestBody Set<TicketLineDTO> ticketLineDTOS) throws Exception {
 
         if(id==0){
             ErrorDetails errorDetails = new ErrorDetails(new Date(), "Invalid Id passed", "Id cannot be zero");

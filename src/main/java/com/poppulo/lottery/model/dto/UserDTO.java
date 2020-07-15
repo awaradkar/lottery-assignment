@@ -19,4 +19,9 @@ public class UserDTO {
 
 	private String token;
 
+	@Override
+	public boolean equals(Object obj) {
+		UserDTO dto = (UserDTO)obj;
+		return this.getUserName().equals(dto.getUserName());
+	}
 }
