@@ -47,6 +47,7 @@ public class LoginController {
 				getAuthorities(dto.getUserRole()));
 		final String token = jwtTokenUtil.generateToken(userDetails);
 		dto.setUserPassword("");
+		dto.setToken(token);
 		return ResponseEntity.ok(dto);
 	}
 

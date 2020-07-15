@@ -66,10 +66,6 @@ public class UserServiceImpl implements UserService {
 			dto = new UserDTO();
 			dto = (UserDTO) EntityConversion.convertModel(user, dto,
 					EntityConversion.ConversionEnum.ENTITYTODTO.ordinal());
-
-			if (!userDTO.getUserPassword().equals(dto.getUserPassword())) {
-				throw new Exception("User Credentials are not valid");
-			}
 		}
 
 		return dto;

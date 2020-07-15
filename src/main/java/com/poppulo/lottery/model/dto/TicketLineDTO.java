@@ -9,8 +9,6 @@ public class TicketLineDTO implements Comparable{
 
     private Long id;
 
-    private Integer number;
-
     private String ticketNumber;
 
     private Integer points = 0;

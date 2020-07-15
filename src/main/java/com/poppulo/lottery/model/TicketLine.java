@@ -13,13 +13,14 @@ import javax.persistence.*;
 public class TicketLine {
 
     @GeneratedValue
+    @Id
     private Long id;
 
-    private Integer number;
+    private String ticketNumber;
 
     private Integer points;
 
     @ManyToOne
-    @JoinColumn
+    @JoinColumn(name = "lottery_id")
     private Lottery lottery;
 }

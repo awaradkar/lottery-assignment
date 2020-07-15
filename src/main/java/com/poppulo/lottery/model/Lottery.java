@@ -1,5 +1,6 @@
 package com.poppulo.lottery.model;
 
+import com.poppulo.lottery.enums.TicketStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +16,9 @@ public class Lottery {
     @Id
     @GeneratedValue
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private TicketStatus status;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "lottery")
     private Set<TicketLine> lines;

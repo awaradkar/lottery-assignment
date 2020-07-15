@@ -1,6 +1,7 @@
 package com.poppulo.lottery.service.impl;
 
-import com.poppulo.lottery.helper.EntityConversion;
+import com.poppulo.lottery.enums.TicketStatus;
+import com.poppulo.lottery.helper.LotteryHelper;
 import com.poppulo.lottery.model.Lottery;
 import com.poppulo.lottery.model.TicketLine;
 import com.poppulo.lottery.model.dto.LotteryDTO;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
 
 @Service
 public class LotteryServiceImpl implements LotteryService {
@@ -21,26 +21,18 @@ public class LotteryServiceImpl implements LotteryService {
     @Autowired
     LotteryRepository lotteryRepository;
 
+    @Autowired
+    LotteryHelper lotteryHelper;
+
     @Override
     public Set<LotteryDTO> getAllTickets() {
         List<Lottery> dbLotteries = lotteryRepository.findAll();
         Set<LotteryDTO> lotteries = new HashSet<>();
 
         for(Lottery lottery:dbLotteries){
-            Set<TicketLineDTO> ticketLineDTOS = new HashSet<>();
-            for(TicketLine ticketLine:lottery.getLines()){
-                TicketLineDTO dto = new TicketLineDTO();
-                dto = (TicketLineDTO) EntityConversion.convertModel(ticketLine, dto,
-                        EntityConversion.ConversionEnum.ENTITYTODTO.ordinal());
-                ticketLineDTOS.add(dto);
-            }
-            LotteryDTO lotteryDTO = new LotteryDTO();
-            lotteryDTO = (LotteryDTO) EntityConversion.convertModel(lottery, lotteryDTO,
-                    EntityConversion.ConversionEnum.ENTITYTODTO.ordinal());
-            lotteryDTO.setLines(ticketLineDTOS);
+            LotteryDTO lotteryDTO = lotteryHelper.getLotteryDTOFromModel(lottery);
             lotteries.add(lotteryDTO);
         }
-
         return lotteries;
     }
 
@@ -48,72 +40,56 @@ public class LotteryServiceImpl implements LotteryService {
     public LotteryDTO createLotteryTicket(LotteryDTO lotteryDTO) throws Exception{
 
         Set<TicketLineDTO> ticketLineDTOs = lotteryDTO.getLines();
+        Lottery lottery = new Lottery();
 
         if(ticketLineDTOs.size()<0){
             throw new Exception("Please provide the data for the ticket lines");
         }
 
-        Set<TicketLine> ticketLines = processTickets(ticketLineDTOs);
-
-        return null;
+        lottery.setStatus(TicketStatus.UNCHECKED);
+        Set<TicketLine> ticketLines = lotteryHelper.processTickets(ticketLineDTOs,lottery);
+        lottery.setLines(ticketLines);
+        lottery = lotteryRepository.save(lottery);
+        lotteryDTO = lotteryHelper.getLotteryDTOFromModel(lottery);
+        return lotteryDTO;
     }
 
-    private Set<TicketLine> processTickets(Set<TicketLineDTO> ticketLineDTOs) throws Exception {
+    @Override
+    public LotteryDTO getTicket(Long id) {
+        return lotteryHelper.getLotteryDTOFromModel(lotteryRepository.findById(id).get());
+    }
 
-        Set<TicketLine> ticketLines = new HashSet<>();
+    @Override
+    public LotteryDTO amendTicket(Long id, Set<TicketLineDTO> ticketLineDTOS) throws Exception {
+        LotteryDTO lotteryDTOUpdate = null;
 
-        int count = 1;
-        for(TicketLineDTO ticketLineDTO:ticketLineDTOs){
-            int ticketNumber = validateTicket(ticketLineDTO, count);
+        Lottery lottery = lotteryRepository.findById(id).get();
 
-            TicketLine ticketLine = new TicketLine();
-            ticketLine.setNumber(ticketNumber);
-
-            int digitsSum = 0;
-            int lastDigit = ticketNumber%10;
-            int previousDigit = ticketNumber%10;
-            boolean fivePointer = true;
-            boolean onePointer = false;
-
-            while(ticketNumber>0){
-                digitsSum = digitsSum+(ticketNumber%10);
-
-                if(previousDigit==ticketNumber%10){
-                    if(ticketNumber<10){
-                        if(lastDigit!=previousDigit && lastDigit!=ticketNumber)
-                            onePointer=true;
-                    }
-                    previousDigit=ticketNumber%10;
-                }
-                else fivePointer=false;
-
-                ticketNumber = ticketNumber/10;
+        if(lottery!=null){
+            if(lottery.getStatus()==TicketStatus.CHECKED){
+                throw new Exception("Ticket is already Checked. Cannot Be Amended Further");
             }
 
-            if(digitsSum==2)ticketLine.setPoints(10);
-            else if(fivePointer)ticketLine.setPoints(5);
-            else if(onePointer)ticketLine.setPoints(1);
-            else ticketLine.setPoints(0);
+            Set<TicketLine> ticketLines = lottery.getLines();
+            ticketLines.addAll(lotteryHelper.processTickets(ticketLineDTOS, lottery));
 
-            count++;
+            lottery.setLines(ticketLines);
+            lottery = lotteryRepository.save(lottery);
+            lotteryDTOUpdate = lotteryHelper.getLotteryDTOFromModel(lottery);
         }
-        return ticketLines;
+        return lotteryDTOUpdate;
     }
 
-    private int validateTicket(TicketLineDTO ticketLineDTO, int count) throws Exception {
-        if(ticketLineDTO.getTicketNumber()==null){
-            throw new Exception("Ticket Number not provided for Line:"+count);
-        }
+    @Override
+    public LotteryDTO getTicketStatus(Long id) {
+        LotteryDTO lotteryDTO = null;
+        Lottery lottery = lotteryRepository.findById(id).get();
 
-        if(ticketLineDTO.getTicketNumber().length()!=3){
-            throw new Exception("Ticket Number of Line:"+count+" has "+ticketLineDTO.getTicketNumber().length()+" digits. Should be 3 digits");
+        if(lottery!=null){
+            lottery.setStatus(TicketStatus.CHECKED);
+            lottery = lotteryRepository.save(lottery);
+            lotteryDTO = lotteryHelper.getLotteryDTOFromModel(lottery);
         }
-
-        try {
-            int ticketNumber = Integer.parseInt(ticketLineDTO.getTicketNumber());
-            return ticketNumber;
-        }catch (Exception e){
-            throw new Exception("Enter a valid ticket number for Line:"+count);
-        }
+        return lotteryDTO;
     }
 }
